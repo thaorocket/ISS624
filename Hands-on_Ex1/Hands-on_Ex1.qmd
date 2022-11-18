@@ -223,7 +223,7 @@ The table above shows the content of listings_sf. A new column called geometry h
 
 In this section, I learn how to perform two commonly used geoprocessing functions of the sf package, namely buffering and point in polygon count.
 
-### Buffering 
+### Buffering
 
 The scenario:
 
@@ -426,7 +426,7 @@ qtm(mpsz_pop2020,
 
 Notes on the above code chunk:
 
-tmap_mode() with \"plot\" option is used to produce a static map. For interactive mode, \"view\" option should be used.
+tmap_mode() with "plot" option is used to produce a static map. For interactive mode, "view" option should be used.
 
 fill() argument is used to map the attribute (i.e. DEPENDENCY)
 
