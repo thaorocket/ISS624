@@ -18,7 +18,7 @@ The code chunk below installs and loads sf and tidyverse packages to R environme
 Note to self: type in \`\`\`{r} then press Enter to create the below frame. There are two tabs (see above menue on the left): Source and Visual. In order to see this below frame, click on the Visual tab.
 
 ```{r}
-pacman::p_load(sf,tidyverse)
+pacman::p_load(sf,tidyverse, tmap)
 ```
 
 p_load function of pacman package is used to install and load tidyverse packages into R environment.
@@ -60,6 +60,8 @@ The pre-schools-location-kml is in kml format. st_read() function is also used i
 preschool = st_read("data/geospatial/pre-schools-location-kml.kml")
 
 ```
+
+Unlike other files in the data folder, pre-schools-location-kml.kml is a file by itself. Therefore, we do not need dsn and layer arguments but need to provide the full path.
 
 From the above message, the preschool file is in point feature data frame. There are a total of 1359 features and 2 fields. Unlike the previous 2 examples above, preschool is in wgs84 coordinates system.
 
@@ -151,13 +153,15 @@ Now the EPSG code is 3414 as shown on the last line of the above window.
 
 ### Transforming the projection of preschool from wgs84 to svy21
 
-In this section, I learn about transforming geographic coordinate system to projected coordinate system. This is because geographic coordinate system is not suitable if we need to use distance and/or area measurements.
+In this section, I learn about transforming geographic coordinate system to projected coordinate system. This is because geographic coordinate system is not suitable if we need to use distance and/or area measurements. Geographic data is usually in decimal degree format, which is only good to identify explicit location but not for any calculations.
+
+The projected coordinate systems flatten the earth in order to calculate the system.
 
 ```{r}
 st_crs(preschool)
 ```
 
-In this scenario, we need to use st_transform() of sf package. This is because we need to reproject preschool from one coordinate system to another coordinate system mathematically.
+In this scenario, we need to use st_transform() of sf package. This is because we need to re-project preschool from one coordinate system to another coordinate system mathematically.
 
 Use the code chunk below to transform the coordinate system:
 
@@ -419,7 +423,6 @@ There are two approaches to prepare thematic map using tmap:
 The code chunk below offers the easiest and quickest way to draw cartographic standard choropleth map as shown below:
 
 ```{r}
-tmap_mode("plot")
 qtm(mpsz_pop2020, 
     fill = "DEPENDENCY")
 ```
