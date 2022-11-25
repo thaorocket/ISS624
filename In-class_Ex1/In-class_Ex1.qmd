@@ -434,41 +434,45 @@ wm_q1
 To add the diagonal element to the neighbour list, we use include.self() function.
 
 ```{r}
-include.self(wm_q1)
+wm_q2<-include.self(wm_q1)
+```
+
+```{r}
+wm_q2
 ```
 
 ```{r}
 wm_q1
 ```
 
-We can see the difference between wm_q1 and include.self(wm_q1) in terms of number of non-zero links, percentage of non-zero links and average number of links.
+We can see the difference between wm_q1 and wm_q2 in terms of number of non-zero links, percentage of non-zero links and average number of links.
 
 Next, we assign binary weights to the neighbor structure that includes the diagonal element.
 
 ```{r}
-wm_q1<-nb2listw(wm_q1)
-wm_q1
+wm_q2<-nb2listw(wm_q2)
+wm_q2
 ```
 
 Next, we will create the lag variable from our weight structure and GDPPC variable.
 
 ```{r}
-lag_w_avg_gdppc<-lag.listw(wm_q1,hunan$GDPPC)
+lag_w_avg_gdppc<-lag.listw(wm_q2,hunan$GDPPC)
 lag_w_avg_gdppc
 ```
 
 Next, we convert the lag variable list into a data frame by using as.data.frame() in the below code chunks:
 
 ```{r}
-lag.list.wm_q1<-list(hunan$NAME_3,lag.listw(wm_q1,hunan$GDPPC))
-lag_wm_q1.res<-as.data.frame(lag.list.wm_q1)
-colnames(lag_wm_q1.res)<-c("NAME_3","lag_window_avg GDPPC")
+lag.list.wm_q2<-list(hunan$NAME_3,lag.listw(wm_q2,hunan$GDPPC))
+lag_wm_q2.res<-as.data.frame(lag.list.wm_q2)
+colnames(lag_wm_q2.res)<-c("NAME_3","lag_window_avg GDPPC")
 ```
 
 Next we will join hunan data frame and lag_wm_q1.res data frame together by using left_join().
 
 ```{r}
-hunan<-left_join(hunan,lag_wm_q1.res)
+hunan<-left_join(hunan,lag_wm_q2.res)
 ```
 
 Last, we will use qtm() of tmap package to plot the GDPPC and lag_window_avg GDPPC for comparison.
