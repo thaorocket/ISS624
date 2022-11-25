@@ -1,0 +1,205 @@
+---
+title: "Hands-on Exercise 2"
+editor: visual
+---
+
+Overview
+
+In this Hands-on Exercise, I learn
+
+Getting Started
+
+```{r}
+pacman::p_load(tidyverse,spdep,sf,tmap)
+```
+
+Getting data into R environment
+
+Importing Shapefile into R environment
+
+```{r}
+hunan<-st_read(dsn="data/geospatial",layer="Hunan")
+```
+
+Importing CSV file into R environment
+
+```{r}
+hunan2012<-read_csv("data/aspatial/Hunan_2012.csv")
+```
+
+Performing relational join
+
+```{r}
+hunan<-left_join(hunan,hunan2012)
+```
+
+Visualizing Regional Development Indicator
+
+We are now preparing a base map and a choropleth map showing the distribution of GDPPC in 2012 by using qtm() of tmap package.
+
+```{r}
+equal<-tm_shape(hunan)+tm_fill("GDPPC",n=5,style="equal")+tm_borders(alpha=0.5)+tm_layout(main.title="Equal inteval classification")
+quantile<-tm_shape(hunan)+tm_fill("GDPPC",n=5,style="quantile")+tm_borders(alpha=0.5)+tm_layout(main.title="Equal quantile classification")
+tmap_arrange(equal,quantile,asp=1,ncol=2)
+```
+
+Note: "equal" style divides input values into bins of equal range and is appropriate for variables with uniform distribution. It is not recommended for variables with skewed distribution as the resulting map will end up having little color diversity.
+
+The "quantile" style breaks the input values into bins with an equal number of features (polygons).
+
+Reference: <https://geocompr.github.io/post/2019/tmap-color-scales/>
+
+Global Spatial Autocorrelation
+
+In this section, I learn how to compute global spatial autocorrelation statistics and perform spatial complete randomness test for global spatial autocorrelation.
+
+Computing Contiguity Spatial Weights using Queen criteria
+
+Before we can compute the spatial autocorrelation statistics, we first compute the contiguity spatial weights of the studied area. The spatial weights are used to define the neighborhood relationship between geographic units (i.e. county) in the study area.
+
+```{r}
+wm_q<-poly2nb(hunan,queen=TRUE)
+summary(wm_q)
+```
+
+The summary report shows there are 88 region units in Hunan. The most connected region has 11 links while the 2 least connected regions have 1 link.
+
+Row-standardized weights matrix
+
+Next we need to assign weights to each neighboring polygon. In this case each neighboring polygon will be assigned equal weight which is 1/number of neighbors.
+
+```{r}
+rswm_q<-nb2listw(wm_q,style="W",zero.policy = TRUE)
+rswm_q
+
+```
+
+Note: The input of nb2listw() must be an object of class nb.
+
+Starting from a binary neighbours list, in which regions are either listed as neighbours or are absent (thus not in the set of neighbours for some definition), the function adds a weights list with values given by the coding scheme style chosen. B is the basic binary coding, W is row standardised (sums over all links to n), C is globally standardised (sums over all links to n), U is equal to C divided by the number of neighbours (sums over all links to unity), while S is the variance-stabilizing coding scheme proposed by Tiefelsdorf et al. 1999, p. 167-168 (sums over all links to n).
+
+If zero policy is set to TRUE, weights vectors of zero length are inserted for regions without neighbour in the neighbours list. These will in turn generate lag values of zero, equivalent to the sum of products of the zero row **`t(rep(0, length=length(neighbours))) %*% x`**, for arbitraty numerical vector **`x`** of length **`length(neighbours)`**. The spatially lagged value of x for the zero-neighbour region will then be zero, which may (or may not) be a sensible choice.
+
+Global Spatial Autocorrelation: Moran's I
+
+In this section, I learn how to perform Moran's I statistics testing by using moran.test() of spdep.
+
+Moran's test for spatial autocorrelation using a spatial weights matrix in weights list form. The assumption of the test are sensitive to the form of the graph of the neighbor relationships and other factors, and the result may be checked against those of moran.mc permutations.
+
+```{r}
+moran.test(hunan$GDPPC,listw=rswm_q,zero.policy=TRUE,na.action=na.omit)
+```
+
+Computing Monte Carlo Moran's I
+
+The code chunk below performs permutation test for Moran's I statistic by using moran.mc() of spdep package. A total of 1000 simulation will be performed.
+
+```{r}
+set.seed(1234)
+bperm<-moran.mc(hunan$GDPPC,listw=rswm_q,nsim=999,zero.policy=TRUE,na.action=na.omit)
+bperm
+```
+
+Visualizing Monte Carlo Moran's I
+
+```{r}
+mean(bperm$res[1:999])
+
+```
+
+```{r}
+var(bperm$res[1:999])
+```
+
+```{r}
+summary(bperm$res[1:999])
+```
+
+```{r}
+hist(bperm$res,freq=TRUE,breaks=20,xlab="Simulated Moran's I")
+abline(v=0,col="red")
+```
+
+```{r}
+library(ggplot2)
+df<-data.frame(value=bperm$res)
+ggplot(df,aes(x=value))+geom_histogram(bins=20,color="black",fill="lightgrey")
+```
+
+Global Spatial Autocorrelation: Geary's
+
+Geary's C test
+
+The code chunk below performs Geary's C test for spatial autocorrelation by using geary.test() of spdep package.
+
+```{r}
+geary.test(hunan$GDPPC,listw=rswm_q)
+```
+
+Computing Monte Carlo Geary's C
+
+The code chunk below performs permutation test for Geary's C statistics by using geary.mc() of spdep
+
+```{r}
+set.seed(1234)
+bperm<-geary.mc(hunan$GDPPC,listw=rswm_q,nsim=999)
+bperm
+
+
+```
+
+Visualizing the Monte Carlo Geary's C
+
+```{r}
+mean(bperm$res[1:999])
+```
+
+```{r}
+var(bperm$res[1:999])
+```
+
+```{r}
+summary(bperm$res[1:999])
+```
+
+```{r}
+hist(bperm$res,freq=TRUE,breaks=20,xlab="Simulated Geary c")
+abline(v=1,col="red")
+
+```
+
+Spatial Correlogram
+
+Compute Moran's I correlogram
+
+sp.correlogram() of spdep package is used to compute a 6-lag (order argument) spatial correlogram of GDPPC. The global spatial autocorrelation used in Moran's I. We then use plot to graph the result.
+
+```{r}
+MI_corr<-sp.correlogram(wm_q,hunan$GDPPC,order=6,method="I",style="W")
+plot(MI_corr)
+```
+
+In order to examine the full analysis report, we use the below code chunk:
+
+```{r}
+print(MI_corr)
+```
+
+Computing Geary's C correlogram and plot
+
+```{r}
+GC_corr<-sp.correlogram(wm_q,hunan$GDPPC,order=6,method="C",style="W")
+plot(GC_corr)
+```
+
+```{r}
+print(GC_corr)
+```
+
+Cluster and Outlier Analysis
+
+```{r}
+fips<-order(hunan$County)
+localMI<-localmoran(hunan$GDPPC,rswm_q)
+head(localMI)
+```

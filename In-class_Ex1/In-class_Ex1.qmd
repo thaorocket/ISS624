@@ -182,7 +182,7 @@ The function identifies neighbor of regions by Euclidean distance with a distanc
 
 First, I need to determine the upper limit for distance band by following the below steps:
 
--   Return a matrix with the indices of points belonging to the set of the k nearest neighbors each other by using knearneigh() of spdep.
+-   Return a matrix with the indices of points belonging to the set of the k nearest neighbors each other by using knearneigh() of spdep. By default, k=1 so it means I am find the the indices of points belonging to the set of the first nearest neighbor.
 
 -   Convert the knn object returned after knearneigh() into a list of neigbours with class nb of integer vectors containing neighbor region number ID by using knn2nb().
 
@@ -190,13 +190,27 @@ First, I need to determine the upper limit for distance band by following the be
 
 -   Remove the list structure of the returned object by using unlist().
 
+    ```{r}
+    knearneigh(coords)
+    ```
+
+    ```{r}
+    k1<-knn2nb(knearneigh(coords))
+    k1
+    summary(k1)
+    ```
+
+```{r}
+nbdists(k1,coords,longlat=TRUE)
+```
+
 ```{r}
 k1 <- knn2nb(knearneigh(coords))
 k1dists <- unlist(nbdists(k1, coords, longlat = TRUE))
 summary(k1dists)
 ```
 
-The summary report shows the largest distance of the first order nearest neighbor is 61.79 km. Therefore, we will be using this as upper bound to ensure that all units will have at least one neighbor.
+The summary report shows the largest distance of the first nearest neighbor is 61.79 km. Therefore, we will be using this as upper bound to ensure that all units will have at least one neighbor.
 
 ### Computing fixed distance weight matrix
 
@@ -207,7 +221,7 @@ wm_d62<-dnearneigh(coords,0,62,longlat=TRUE)
 summary(wm_d62)
 ```
 
-On average, the number of links for each area is 3.681818.
+Based on upper bound of 62km, the average number of neighbors for each area unit is 3.681818.
 
 Next, we will use str() to display the content of the wm_d62 matrix
 
