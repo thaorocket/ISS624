@@ -1,0 +1,65 @@
+---
+title: "Hands-on Exercise 3: Geographical Segmentation with Spatially Constrained Clustering Techniques"
+editor: visual
+---
+
+Overview
+
+In this hands-on exercise, we will learn how to delineate homogeneous regions by using geographically referenced multivariate data. There are two major analysis, namely:
+
+hierarchical cluster analysis, and
+
+spatially constrained cluster analysis
+
+Getting Started
+
+The analytical question
+
+The code chunks below install and launch these R packages in R environment:
+
+```{r}
+pacman::p_load(rgdal,spdep,tmap,sf,ggpubr,cluster,factoextra,NbClust,heatmaply,corrplot,psych,tidyverse)
+```
+
+Importing geospatial data into R environment
+
+The below code chunks use st_read() to import Myanmar Township Boundary GIS data in ESRI shapefile format into R environment:
+
+```{r}
+shan_sf<-st_read(dsn="data/geospatial",layer="myanmar_township_boundaries")%>%
+  filter(ST %in% c("Shan (East)","Shan (North)","Shan (South)"))
+```
+
+From the above summary table, we can see that there are 330 features with 14 columns. The imported township boundary object is called shan_sf. It is saved in simple feature data frame format.
+
+We can view the content of the newly created shan_sf simple feature data frame by using the code chunks below:
+
+```{r}
+shan_sf
+```
+
+Since shan_sf conforms to tidy framework, we also can use glimpse() to reveal the data type of its fields.
+
+```{r}
+glimpse(shan_sf)
+```
+
+Importing aspatial data into R environment
+
+The code chunks below import csv file format into R environment by using read_csv() function of readr package:
+
+```{r}
+ict<-read_csv("data/aspatial/Shan-ICT.csv")
+```
+
+The imported InfoComm variable was extracted from the 2014 Myanmar Population and Housing Census Myanmar. The attribute data set is called ict and saved in R's tibble data frame format.
+
+The code chunk below reveals the summary statistics of ict data frame:
+
+```{r}
+summary(ict)
+```
+
+In total there are 11 fields with 55 observations in the tibble data frame.
+
+Derive new variables using dplyr package

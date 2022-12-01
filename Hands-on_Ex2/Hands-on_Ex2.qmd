@@ -1,5 +1,5 @@
 ---
-title: "Hands-on Exercise 2"
+title: "Hands-on Exercise 2: Global and Local Measures of Spatial Autocorrelation"
 editor: visual
 ---
 
@@ -273,7 +273,7 @@ tm_shape(hunan.localMI)+
   tm_borders(alpha=0.5)
 ```
 
-Mapping local Moran's I p-values
+#### Mapping local Moran's I p-values
 
 ```{r}
 tm_shape(hunan.localMI)+
@@ -333,7 +333,8 @@ quadrant<-vector(mode="numeric",length=nrow(localMI))
 Next we center the variable of interest around its mean.
 
 ```{r}
-DV<-hunan$GDPPC-mean(hunan$GDPPC)
+hunan$lag_GDPPC<-lag.listw(rswm_q,hunan$GDPPC)
+DV<-hunan$lag_GDPPC-mean(hunan$lag_GDPPC)
 ```
 
 After that, we also center the local Moran's I statistics around its mean.
@@ -367,7 +368,8 @@ We combine all the steps into the below code chunks:
 
 ```{r}
 quadrant<-vector(mode="numeric",length=nrow(localMI))
-DV<-hunan$GDPPC-mean(hunan$GDPPC)
+hunan$lag_GDPPC<-lag.listw(rswm_q,hunan$GDPPC)
+DV<-hunan$lag_GDPPC-mean(hunan$lag_GDPPC)
 C_mI<-localMI[,1]-mean(localMI[,1])
 signif<-0.05
 quadrant[DV>0&C_mI>0]<-4

@@ -155,7 +155,7 @@ From the above frequency table, we can group those under "Functional", "Function
 
 In this section, we will perform a wide range of geoprocessing with one commonly used geogprocessing functions: point in polygon count.
 
-However, we will need to extract relevant data about the number of water points first under different categories: function, non-function and unknown.
+However, we will need to extract relevant data about the number of water points first under different categories: functional, non-functional and unknown.
 
 ### Extracting functional water points
 
