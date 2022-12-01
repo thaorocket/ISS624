@@ -1,5 +1,5 @@
 ---
-title: "Take-home_Ex1"
+title: "Take-home Exercise 1"
 author: Le Thanh Thao
 execute: 
   warning: false
