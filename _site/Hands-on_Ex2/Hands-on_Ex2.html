@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>ISS624 - Hands-on Exercise 2</title>
+<title>ISS624 - Hands-on Exercise 2: Global and Local Measures of Spatial Autocorrelation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -153,6 +153,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     <a class="dropdown-item" href="../Hands-on_Ex2/Hands-on_Ex2.html">
  <span class="dropdown-text">Hands-on Exercises 2</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../Hands-on_Ex3/Hands-on_Ex3.html">
+ <span class="dropdown-text">Hands-on Exercises 3</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -251,7 +255,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Hands-on Exercise 2</h1>
+<h1 class="title">Hands-on Exercise 2: Global and Local Measures of Spatial Autocorrelation</h1>
 </div>
 
 
@@ -961,7 +965,9 @@ Zixing        -7.6849e-01 -8.8210e-02  9.4057e-01 -7.0144e-01         0.4830</co
 <p><img src="Hands-on_Ex2_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>Mapping local Moran’s I p-values</p>
+</section>
+<section id="mapping-local-morans-i-p-values" class="level4">
+<h4 class="anchored" data-anchor-id="mapping-local-morans-i-p-values">Mapping local Moran’s I p-values</h4>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(hunan.localMI)<span class="sc">+</span></span>
 <span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="at">col=</span><span class="st">"Pr.Ii"</span>,<span class="at">breaks=</span><span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>,<span class="fl">0.001</span>,<span class="fl">0.01</span>,<span class="fl">0.05</span>,<span class="fl">0.1</span>,<span class="cn">Inf</span>),<span class="at">palette=</span><span class="st">"-Blues"</span>,<span class="at">title=</span><span class="st">"local Moran's I p-values"</span>)<span class="sc">+</span></span>
@@ -1026,7 +1032,8 @@ Zixing        -7.6849e-01 -8.8210e-02  9.4057e-01 -7.0144e-01         0.4830</co
 </div>
 <p>Next we center the variable of interest around its mean.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>DV<span class="ot">&lt;-</span>hunan<span class="sc">$</span>GDPPC<span class="sc">-</span><span class="fu">mean</span>(hunan<span class="sc">$</span>GDPPC)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>hunan<span class="sc">$</span>lag_GDPPC<span class="ot">&lt;-</span><span class="fu">lag.listw</span>(rswm_q,hunan<span class="sc">$</span>GDPPC)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>DV<span class="ot">&lt;-</span>hunan<span class="sc">$</span>lag_GDPPC<span class="sc">-</span><span class="fu">mean</span>(hunan<span class="sc">$</span>lag_GDPPC)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>After that, we also center the local Moran’s I statistics around its mean.</p>
 <div class="cell">
@@ -1050,14 +1057,15 @@ Zixing        -7.6849e-01 -8.8210e-02  9.4057e-01 -7.0144e-01         0.4830</co
 <p>We combine all the steps into the below code chunks:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>quadrant<span class="ot">&lt;-</span><span class="fu">vector</span>(<span class="at">mode=</span><span class="st">"numeric"</span>,<span class="at">length=</span><span class="fu">nrow</span>(localMI))</span>
-<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>DV<span class="ot">&lt;-</span>hunan<span class="sc">$</span>GDPPC<span class="sc">-</span><span class="fu">mean</span>(hunan<span class="sc">$</span>GDPPC)</span>
-<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>C_mI<span class="ot">&lt;-</span>localMI[,<span class="dv">1</span>]<span class="sc">-</span><span class="fu">mean</span>(localMI[,<span class="dv">1</span>])</span>
-<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>signif<span class="ot">&lt;-</span><span class="fl">0.05</span></span>
-<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>quadrant[DV<span class="sc">&gt;</span><span class="dv">0</span><span class="sc">&amp;</span>C_mI<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">4</span></span>
-<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>quadrant[DV<span class="sc">&lt;</span><span class="dv">0</span><span class="sc">&amp;</span>C_mI<span class="sc">&lt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">2</span></span>
-<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>quadrant[DV<span class="sc">&lt;</span><span class="dv">0</span><span class="sc">&amp;</span>C_mI<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span></span>
-<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>quadrant[DV<span class="sc">&gt;</span><span class="dv">0</span><span class="sc">&amp;</span>C_mI<span class="sc">&lt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">3</span></span>
-<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>quadrant[localMI[,<span class="dv">5</span>]<span class="sc">&gt;</span>signif]<span class="ot">&lt;-</span><span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>hunan<span class="sc">$</span>lag_GDPPC<span class="ot">&lt;-</span><span class="fu">lag.listw</span>(rswm_q,hunan<span class="sc">$</span>GDPPC)</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>DV<span class="ot">&lt;-</span>hunan<span class="sc">$</span>lag_GDPPC<span class="sc">-</span><span class="fu">mean</span>(hunan<span class="sc">$</span>lag_GDPPC)</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>C_mI<span class="ot">&lt;-</span>localMI[,<span class="dv">1</span>]<span class="sc">-</span><span class="fu">mean</span>(localMI[,<span class="dv">1</span>])</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>signif<span class="ot">&lt;-</span><span class="fl">0.05</span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>quadrant[DV<span class="sc">&gt;</span><span class="dv">0</span><span class="sc">&amp;</span>C_mI<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">4</span></span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>quadrant[DV<span class="sc">&lt;</span><span class="dv">0</span><span class="sc">&amp;</span>C_mI<span class="sc">&lt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">2</span></span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>quadrant[DV<span class="sc">&lt;</span><span class="dv">0</span><span class="sc">&amp;</span>C_mI<span class="sc">&gt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">1</span></span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>quadrant[DV<span class="sc">&gt;</span><span class="dv">0</span><span class="sc">&amp;</span>C_mI<span class="sc">&lt;</span><span class="dv">0</span>]<span class="ot">&lt;-</span><span class="dv">3</span></span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>quadrant[localMI[,<span class="dv">5</span>]<span class="sc">&gt;</span>signif]<span class="ot">&lt;-</span><span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="plotting-lisa-map" class="level4">
