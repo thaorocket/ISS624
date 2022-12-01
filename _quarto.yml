@@ -15,6 +15,12 @@ website:
         menu: 
         - text: In-class Exercises 1
           href: In-class_Ex1/In-class_Ex1.qmd
+        
+      - text: Take-home Exercises
+        menu: 
+        - text: Take-home Exercises 1
+          href: Take-home_Ex1/Take-home_Ex1.qmd
+      
     right:
       - href: index.qmd
         text: Home
