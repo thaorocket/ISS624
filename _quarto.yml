@@ -2,7 +2,7 @@ project:
   type: website
 
 website:
-  title: "ISS624"
+  title: "ISSS624: Geospatial Data Analytics"
   navbar:
     left: 
       - text: Hands-on Exercises
@@ -13,6 +13,8 @@ website:
           href: Hands-on_Ex2/Hands-on_Ex2.qmd
         - text: Hands-on Exercises 3
           href: Hands-on_Ex3/Hands-on_Ex3.qmd 
+        - text: Hands-on Exercises 4
+          href: Hands-on_Ex4/Hands-on_Ex4.qmd 
       - text: In-class Exercises
         menu: 
         - text: In-class Exercises 1
@@ -25,6 +27,7 @@ website:
         menu: 
         - text: Take-home Exercises 1
           href: Take-home_Ex1/Take-home_Ex1.qmd
+     
       
     right:
       - href: index.qmd
