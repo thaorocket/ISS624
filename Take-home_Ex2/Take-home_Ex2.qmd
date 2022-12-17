@@ -969,7 +969,7 @@ We notice that compared to those of the non-spatially constrained clustering met
 
 ### Visualizing individual clustering variable
 
-#### Multivariate Visualization 
+#### Multivariate Visualization
 
 In the code chunks below, we use [*ggparcoord()*](https://www.rdocumentation.org/packages/GGally/versions/1.5.0/topics/ggparcoord) function **GGally** package to plot parallel coordinate plot to reveal clustering variables by cluster. Do note that the data used is nga_wp_cluster, which contains data on **non-spatially** **constrained hierarchical clustering** using skater approach.
 

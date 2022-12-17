@@ -23,6 +23,8 @@ website:
           href: In-class_Ex2/In-class_Ex2.qmd
         - text: In-class Exercises 3
           href: In-class_Ex3/In-class_Ex3.qmd
+        - text: In-class Exercises 5
+          href: In-class_Ex5/In-class_Ex5.qmd
       - text: Take-home Exercises
         menu: 
         - text: Take-home Exercises 1
@@ -38,7 +40,7 @@ website:
 
 format:
   html:
-    theme: cosmo
+    theme: minty
     css: styles.css
     toc: true
 

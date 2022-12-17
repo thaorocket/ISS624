@@ -1,0 +1,316 @@
+---
+title: "In-class Exercise 5"
+format: html
+number-sections: true
+execute: 
+  warning: false
+  message: false
+editor: visual
+---
+
+## Getting Started
+
+In the below code chunks, we install and import relevant packages for this exercise:
+
+```{r}
+pacman::p_load(sf,tidyverse,funModeling,blorr,corrplot,ggpubr,spdep,GWmodel,tmap,skimr,caret)
+```
+
+Below is the explanation for packages used in this Take-home exercise:
+
+-   Spatial data handling
+
+    -   **sf** and **spdep**
+
+-   Attribute data handling
+
+    -   **tidyverse**, especially **readr**, **ggplot2** and **dplyr**
+
+-   Exploratory data analysis
+
+    -   **funModeling**, **skimr**
+
+-   Choropleth mapping
+
+    -   **tmap**
+
+-   Calibrating Geographically Weighted Model
+
+    -   **GWmodel**
+
+-   Building and validating binary logistics regression
+
+    -   **blorr and caret** (more for applied machine learning but we can use it for this exercise for comparison purpose)
+
+## Importing the Analytical Data
+
+In the below code chunks we import the data on the analytical data
+
+```{r}
+Osun<-read_rds("rds/Osun.rds")
+Osun_wp_sf<-read_rds("rds/Osun_wp_sf.rds")
+```
+
+## Exploratory Data Analysis (EDA)
+
+### Frequency Table of inputs under Status
+
+In the below code chunks, we would like to look at frequency table of inputs under Status column.
+
+```{r}
+Osun_wp_sf%>%
+  freq(input="status")
+```
+
+### Summary statistics with skimr package
+
+In the below code chunk, we explore using *skim()* function of **skimr** package to come up with summary statistics.
+
+```{r}
+Osun_wp_sf%>%
+  skim()
+```
+
+Notice that with this function skim() summary statistics is nicely arranged in tabular form, which is easier for us to read.
+
+In this table, it is important to look at n_missing field where it displays the number of missing records. We notice that for some fields such as rehab_priority and install_year have very large number of missing records (2654 and 1144 respectively) while the total number of observations were 4760, which meant that around 55.77% and 24.03% (more than 20%) of the records will be missing. Therefore, it may not be ideal to choose these variables as explanatory variables for our analysis. On the other hand, we notice that variables such as water_point_population and local_population_1km have 4 missing records. Since the number of records is considerably small for the size of the data set, we can use these 2 variables for our analysis.
+
+From the summary table above, the independent variables that we will be using for the analysis will be:
+
+-   distance_to_primary_road
+
+-   distance_to_secondary_road
+
+-   distance_to_tertiary_road
+
+-   distance_to_city
+
+-   distance_to_town
+
+-   water_point_population
+
+-   local_population_1km
+
+-   usage_capacity
+
+-   is_urban
+
+-   water_source_clean
+
+### Data Wrangling with dplyr package
+
+In the next code chunks, we will come up with a new data frame called Osun_wp_sf_clean where we have filtered out all the missing values in those independent variables that we have selected above.
+
+```{r}
+Osun_wp_sf_clean<-Osun_wp_sf%>%
+  filter_at(vars(status,
+                  distance_to_primary_road,distance_to_tertiary_road,distance_to_city,distance_to_town,water_point_population,local_population_1km,usage_capacity,is_urban,water_source_clean),all_vars(!is.na(.)))%>%
+  mutate(usage_capacity=as.factor(usage_capacity))
+              
+```
+
+At the same time, we also convert usage capacity to factor using *as.factor()* function instead of keeping the original numeric values. Else, the calibration will be different when we build the model.
+
+## Correlation Analysis
+
+In the below code chunks, we come up with a new data frame called Osun_wp by selecting all the column number of the independent variables selected above. At the same time, we also use *st_set_geometry()* function of **sf** package to drop the Geometry column.
+
+```{r}
+Osun_wp<-Osun_wp_sf_clean%>%
+  select(c(7,35:39,42:43,46:47,57))%>%
+  st_set_geometry(NULL)
+  
+```
+
+Do note that for simple feature data frame, we need to drop the geometry column to derive the correlation matrix. Else there will be error.
+
+```{r}
+cluster_vars.cor=cor(Osun_wp[,2:7])
+corrplot.mixed(cluster_vars.cor,lower="ellipse",upper="number",tl.pos="lt",diag="l",tl.col="black")
+```
+
+From the above matrix, if we use 0.8 (both negative and positive signs), we can see that there is no sign of multi-collinearity between the independent variables. Also note that we should only look at the independent variables and not dependent variable.
+
+## Building a logistics regression model
+
+In the below code chunk, we use glm() of Rstats to build a list object called model.
+
+```{r}
+model<-glm(status~distance_to_primary_road+distance_to_secondary_road+distance_to_tertiary_road+distance_to_city+distance_to_town+is_urban+usage_capacity+water_source_clean+water_point_population+local_population_1km,data=Osun_wp_sf_clean,family=binomial(link="logit"))
+```
+
+Note that the result will be a list object with list of data tables.
+
+In the below code chunk, we use *blr_regress()* function of **blorr** package to convert the modeling results into a report.
+
+```{r}
+blr_regress(model)
+```
+
+From the above table summary, we notice that these 2 independent variables: distance_to_primary_road and distance_to_secondary_road have p-values at 0.4744 and 0.5802 respectively. They are more than the alpha (significance level) of 0.05. Therefore, these two variables are not statistically significant. However, for the purpose of understanding the accuracy and other parameter of the models in this exercise, we will still keep these 2 variables for now.
+
+### Deriving a confusion matrix under global/generalized linear regression model
+
+In the below code chunk, we use blr_confusion_matrix() of blorr package to derive a confusion matrix. We also set the cutoff as 0.5.
+
+```{r}
+blr_confusion_matrix(model,cutoff = 0.5)
+```
+
+From the above summary, we know that overall the accuracy is 0.6739.
+
+Sensitivity value of 0.7207 and specificity of 0.6154 mean that the model can flag out true positive (roughly 72%) better than true negative (roughly 61%).
+
+## Building Geographically Weighted Logistics Regression Model
+
+### Change data from sf to sp
+
+In the below code chunks, we will need to convert sf data frame to sp data frame.
+
+```{r}
+Osun_wp_sp<-Osun_wp_sf_clean%>%
+  select(c(status,distance_to_primary_road,distance_to_secondary_road,distance_to_tertiary_road,distance_to_city,distance_to_town,is_urban,usage_capacity,water_source_clean,water_point_population,local_population_1km))%>%
+  as_Spatial()
+Osun_wp_sp
+```
+
+Notice that the class has been changed to SpatialPolygonsDataFrame. We use the Osun_wp_sf_clean data set (instead of Osun_wp_sf) where we have already excluded the 4 missing values under the water_point_population and local_population_1km variables.
+
+### Building Fixed Bandwidth GW model
+
+#### Computing fixed bandwidth
+
+Next, in the below code chunks, we will calculate the fixed bandwidth for the generalized geographically weighted regression by using bw.ggwr() function of GWmodel
+
+```{r}
+#|eval: false
+#|echo: false
+bw.fixed<-bw.ggwr(status~distance_to_primary_road+distance_to_secondary_road+distance_to_tertiary_road+distance_to_city+distance_to_town+is_urban+usage_capacity+water_source_clean+water_point_population+local_population_1km,data=Osun_wp_sp,family="binomial",approach="AIC",kernel="gaussian",adaptive=FALSE,longlat=FALSE)
+```
+
+We use the code chunk below to show the value of the fixed bandwidth.
+
+```{r}
+bw.fixed
+```
+
+In the below code chunks, we will use ggwr.basic() function of GWmodel package to implement generalized GWR.
+
+```{r}
+gwlr.fixed<-ggwr.basic(status~distance_to_primary_road+distance_to_secondary_road+distance_to_tertiary_road+distance_to_city+distance_to_town+is_urban+usage_capacity+water_source_clean+water_point_population+local_population_1km,data=Osun_wp_sp,bw=bw.fixed,family="binomial",kernel="gaussian",adaptive=FALSE,longlat=FALSE)
+```
+
+```{r}
+gwlr.fixed
+```
+
+By comparing the AIC under Global Model and GWLR Model, we notice that AIC dropped from 5712.099 to 4414.606. Notice that GWLR model has no AICc value, therefore, we can only compare AIC value. We can conclude that GWLR model improves the explanatory capabilities compared to generalized linear regression model.
+
+## Model Assessment
+
+### Converting SDF into sf data.frame
+
+To assess the performance of the gwLR, we will convert the SDF object in as data frame by using the code chunk below:
+
+```{r}
+gwr.fixed<-as.data.frame(gwlr.fixed$SDF)
+```
+
+Next, we will label yhat values greater or equal to 0.5 into 1 and else 0. The result of the logic comparison operation will be saved into a field called most.
+
+```{r}
+gwr.fixed<-gwr.fixed%>%
+  mutate(most=ifelse(gwr.fixed$yhat>=0.5,T,F))
+```
+
+Put both as factor and make the confusion Matrix that the one we have just now.
+
+```{r}
+gwr.fixed$y<-as.factor(gwr.fixed$y)
+gwr.fixed$most<-as.factor(gwr.fixed$most)
+CM<-confusionMatrix(data=gwr.fixed$most,reference=gwr.fixed$y)
+CM
+```
+
+The accuracy of the model has increased from 0.67 to 0.8837. We did not change any variables from global linear regression to GWLR. Only the approach changed. We also notice the increase in sensitivity and specificity respectively, which means that GWLR can flag the true positive and true negative better than the global linear regression approach.
+
+Take note that yhat looks at functional water points. If we set cut-off at 0.5, values which are less than 0.5 can be equivalent to high probability of non-functional water points. By using GWR, we can explain the non-functional water points better. This means that in order to improve the water point functionality in regions, we should apply localized strategy instead of a more countrywide strategy.
+
+## Visualizing gwLR
+
+```{r}
+Osun_wp_sf_selected<-Osun_wp_sf_clean%>%
+  select(c(ADM2_EN,ADM2_PCODE,ADM1_EN,ADM1_PCODE,status))
+```
+
+```{r}
+gwr_sf.fixed<-cbind(Osun_wp_sf_selected,gwr.fixed)
+```
+
+### Visualizing coefficient estimates
+
+The code chunks below is used to create an interactive point symbol map.
+
+```{r}
+tmap_mode("view")
+prob_T<-tm_shape(Osun)+
+  tm_polygons(alpha=0.1)+
+tm_shape(gwr_sf.fixed)+
+  tm_dots(col="yhat",border.col="gray60",border.lwd=1)+
+  tm_view(set.zoom.limits = c(8,14))
+prob_T
+```
+
+```{r}
+tmap_mode("plot")
+```
+
+## Building Geographically Weighted Logistics Regression by removing two non statistically significant independent variables
+
+In the below code chunks, we calculate the fixed bandwidth for a new model which we have removed two variables which are not statistically significant: water_point_population and local_population_1km
+
+```{r}
+
+bw.fixed_rm<-bw.ggwr(status~distance_to_tertiary_road+distance_to_city+distance_to_town+is_urban+usage_capacity+water_source_clean+water_point_population+local_population_1km,data=Osun_wp_sp,family="binomial",approach="AIC",kernel="gaussian",adaptive=FALSE,longlat=FALSE)
+```
+
+Below code chunk shows the new fixed bandwidth value.
+
+```{r}
+bw.fixed_rm
+```
+
+```{r}
+
+gwlr.fixed_rm<-ggwr.basic(status~distance_to_tertiary_road+distance_to_city+distance_to_town+is_urban+usage_capacity+water_source_clean+water_point_population+local_population_1km,data=Osun_wp_sp,bw=bw.fixed_rm,family="binomial",kernel="gaussian",adaptive=FALSE,longlat=FALSE)
+```
+
+```{r}
+gwlr.fixed_rm
+```
+
+By comparing the AIC under Global Model and GWLR Model, we notice that AIC dropped from 5708.9 to 4418.776. Notice that GWLR model has no AICc value, therefore, we can only compare AIC value. We can conclude that GWLR model improves the explanatory capabilities compared to generalized linear regression model.
+
+To assess the performance of the gwLR, we will convert the SDF object in as data frame by using the code chunk below:
+
+```{r}
+gwr.fixed_rm<-as.data.frame(gwlr.fixed_rm$SDF)
+```
+
+Next, we will label yhat values greater or equal to 0.5 into 1 and else 0. The result of the logic comparison operation will be saved into a field called most.
+
+```{r}
+gwr.fixed_rm<-gwr.fixed_rm%>%
+  mutate(most=ifelse(gwr.fixed_rm$yhat>=0.5,T,F))
+```
+
+Next we will use the *confusionMatrix()* function of **caret** package to derive the confusion matrix for GWLR model.
+
+```{r}
+gwr.fixed_rm$y<-as.factor(gwr.fixed_rm$y)
+gwr.fixed_rm$most<-as.factor(gwr.fixed_rm$most)
+CM<-confusionMatrix(data=gwr.fixed_rm$most,reference=gwr.fixed_rm$y)
+CM
+```
+
+In fact, if we compare the performance (accuracy, sensitivity and specificity) between the GWLR model where we keep the 2 statistically insignificant variables and the GWLR model where we remove the 2 statistically insignificant variable, the accuracy value does not change significantly. This was due to the fact that when statistically insignificant variables (rather than statistically significant variables) were removed from the model, they do not impact much on the performance of the model.
